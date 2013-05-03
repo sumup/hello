@@ -6,7 +6,7 @@
 /dist/
 /doc/*
 !/doc/overview.edoc
-!/doc/hello.html
+!/doc/tp-presentation.html
 
 /deps
 /logs
