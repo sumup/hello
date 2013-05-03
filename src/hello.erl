@@ -110,7 +110,7 @@ binding_module("zmq-tcp") -> hello_zmq_listener;
 binding_module("zmq-ipc") -> hello_zmq_listener;
 binding_module("http")    -> hello_http_listener;
 binding_module("sockjs")  -> hello_sockjs_listener;
-binding_module(_Scheme)   -> error(notsup).
+binding_module(_Scheme)   -> error(badprotocol).
 
 % @doc Return the list of bound modules.
 -spec bindings() -> [{url(), module()}].
