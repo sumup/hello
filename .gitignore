@@ -8,4 +8,7 @@
 !/doc/overview.edoc
 !/doc/hello.html
 
+/deps
+/logs
+
 /tetrapak/.local.cache
