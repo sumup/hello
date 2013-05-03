@@ -30,21 +30,21 @@ bind_stateless_zmq_url_errors(_Config) ->
     {error, occupied} = hello:bind_stateless(URL, ?MODULE).
 
 bind_stateless_cross_protocol_checking(_Config) ->
-    ok = hello:bind_stateless("http://localhost:6008", test_1),
-    {error, occupied} = hello:bind_stateless("zmq-tcp://127.0.0.1:6008", test_2),
+    ok = hello:bind_stateless("http://localhost:6008", hello_stateless_handler_example),
+    {error, occupied} = hello:bind_stateful("zmq-tcp://127.0.0.1:6008", hello_stateful_handler_example, []),
 
-    ok = hello:bind_stateless("zmq-tcp://*:6009", test_1),
-    {error, occupied} = hello:bind_stateless("http://127.0.0.1:6009", test_2).
+    ok = hello:bind_stateless("zmq-tcp://*:6009", hello_stateless_handler_example),
+    {error, occupied} = hello:bind_stateful("http://127.0.0.1:6009", hello_stateful_handler_example, []).
 
 bindings(_Config) ->
     OrigBindings = lists:sort(hello:bindings()),
 
     IPCPath = filename:absname("/tmp/bindings_test.ipc"),
 
-    Bindings = [{"http://127.0.0.1:6003/test_1", test_1},
-                {"http://127.0.0.1:6003/test_2", test_2},
-                {"zmq-ipc://" ++ IPCPath, test_3},
-                {"zmq-tcp://127.0.0.1:6004", test_4}],
+    Bindings = [{"http://127.0.0.1:6003/test_1", hello_stateless_handler_example},
+                {"http://127.0.0.1:6003/test_2", hello_stateless_handler_example},
+                {"zmq-ipc://" ++ IPCPath,        hello_stateless_handler_example},
+                {"zmq-tcp://127.0.0.1:6004",     hello_stateless_handler_example}],
 
     lists:foreach(fun ({URL, Module}) ->
                           ok = hello:bind_stateless(URL, Module)

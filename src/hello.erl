@@ -82,6 +82,7 @@ bind_stateful(URL, CallbackModule, Args) ->
 %
 %   The function will <b>exit</b>:
 %   <ul>
+%     <li>with reason ``badmodule'' when the callback module cannot be found</li>
 %     <li>with reason ``badurl'' when the URL is malformed</li>
 %     <li>with reason ``badprotocol'' when the URL uses an unknown scheme</li>
 %   </ul>
@@ -90,6 +91,10 @@ bind_stateless(URL, CallbackModule) ->
     bind_uri(stateless, URL, CallbackModule, []).
 
 bind_uri(Type, URL, CallbackModule, Args) ->
+    case code:which(CallbackModule) of
+        non_existing -> error(badmodule);
+        _File        -> ok
+    end,
     case (catch ex_uri:decode(URL)) of
         {ok, Rec = #ex_uri{scheme = Scheme}, _} ->
             ListenerMod = binding_module(Scheme),
