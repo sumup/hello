@@ -35,6 +35,8 @@
 % This is useful for debugging purposes.
 start() ->
     application:start(sasl),
+    application:start(ranch),
+    application:start(crypto),
     application:start(cowboy),
     application:start(ex_uri),
     application:start(ibrowse),
