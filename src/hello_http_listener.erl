@@ -87,16 +87,35 @@ process(Binding, Req, State) ->
     {ok, Body, Req7} = cowboy_req:body(Req6),
     hello_binding:incoming_message(Handler, Body),
     Req8 = cowboy_req:compact(Req7),
-    {ok, Req9} = cowboy_req:chunked_reply(200, json_headers(), Req8),
-    http_chunked_loop(Handler, Req9, State).
+    handle_first_transport_message(Req8, Handler, State).
+
+handle_first_transport_message(Req1, Handler, State) ->
+    receive
+        #hello_msg{handler = Handler, message = Message, closed = true} ->
+            %% optimization: don't do chunked TE if there is only a single reply
+            %% i.e. for simple stateless calls
+            {ok, Req2} = cowboy_req:reply(200, json_headers(), Message, Req1),
+            {ok, Req2, State};
+        #hello_msg{handler = Handler, message = Message} ->
+            {ok, Req2} = cowboy_req:chunked_reply(200, json_headers(), Req1),
+            cowboy_req:chunk(Message, Req2),
+            http_chunked_loop(Handler, Req2, State);
+        #hello_closed{handler = Handler} ->
+            {ok, Req1, State}
+    end.
 
 http_chunked_loop(Handler, Request, State) ->
     receive
         #hello_closed{handler = Handler} ->
             {ok, Request, State};
-        #hello_msg{handler = Handler, message = Message} ->
+        #hello_msg{handler = Handler, message = Message, closed = Closed} ->
             cowboy_req:chunk(Message, Request),
-            http_chunked_loop(Handler, Request, State)
+            if
+                Closed ->
+                    http_chunked_loop(Handler, Request, State);
+                true ->
+                    {ok, Request, State}
+            end
     end.
 
 json_headers() ->

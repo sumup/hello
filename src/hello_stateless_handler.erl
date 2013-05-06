@@ -141,16 +141,22 @@ handler(#binding{protocol = Protocol, log_url = Endpoint, callback_mod = Callbac
             case run_binary_request(Protocol, CallbackModule, TransportParams, Message) of
                 {ok, Request, Response} ->
                     hello_request_log:request(CallbackModule, self(), Endpoint, Request, Response),
-                    BinResp = hello_proto:encode(Response),
-                    Transport ! #hello_msg{handler = self(), peer = Peer, message = BinResp};
+                    TMsg = #hello_msg{handler = self(),
+                                      peer = Peer,
+                                      message = hello_proto:encode(Response),
+                                      closed = true},
+                    Transport ! TMsg;
                 {proto_reply, Response} ->
                     hello_request_log:bad_request(CallbackModule, self(), Endpoint, Message, Response),
-                    BinResp = hello_proto:encode(Response),
-                    Transport ! #hello_msg{handler = self(), peer = Peer, message = BinResp};
+                    TMsg = #hello_msg{handler = self(),
+                                      peer = Peer,
+                                      message = hello_proto:encode(Response),
+                                      closed = true},
+                    Transport ! TMsg;
                 ignore ->
+                    Transport ! #hello_closed{handler = self(), peer = Peer},
                     ignore
-            end,
-            Transport ! #hello_closed{handler = self(), peer = Peer}
+            end
     after
         ?MESSAGE_TIMEOUT ->
             Transport ! #hello_closed{handler = self(), peer = Peer}
