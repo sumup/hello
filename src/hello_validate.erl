@@ -26,7 +26,8 @@
 -include("hello.hrl").
 -include("internal.hrl").
 
--type json_type()  :: 'boolean' | 'object' | 'integer' | 'float' | 'number' | 'string' | 'list' | 'array' | 'any' | 'iso_date'.
+-type json_type()  :: 'boolean' | 'object' | 'integer' | 'float'
+                    | 'number' | 'string' | 'list' | 'array' | 'any' | 'iso_date'.
 -type param_type() :: json_type() | {enum, [atom()]}.
 
 %% --------------------------------------------------------------------------------
@@ -137,9 +138,14 @@ validate_type(PName, #rpc_param{type = PType}, GivenValue) ->
             atom_from_enum(PName, Elems, GivenValue);
         _T ->
             case type(PType, GivenValue) of
-                true -> GivenValue;
-                false -> throw({invalid, ["invalid parameter type for param '", PName, "': expected ", atom_to_list(PType)]});
-                {true, NewValue} -> NewValue
+                true ->
+                    GivenValue;
+                false ->
+                    Msg = ["invalid parameter type for param '", PName,
+                           "': expected ", atom_to_list(PType)],
+                    throw({invalid, Msg});
+                {true, NewValue} ->
+                    NewValue
             end
     end.
 
@@ -172,14 +178,20 @@ zip(_1, [], Result) ->
 zip([H1|R1], [H2|R2], {Result, TooMany}) ->
     zip(R1, R2, {[{H1, H2}|Result], TooMany}).
 
+-define(DATE_RE, "^([0-9]{4})(-?)([0-9]{2})(-?)([0-9]{2})([tT])(.*)$").
+-define(TIME_RE, "^([0-9]{2})(:?)([0-9]{2})(:?)([0-9]{2})(.*)$").
+
 validate_date(Date) when is_binary(Date) ->
     validate_date(binary_to_list(Date));
 validate_date(Date) ->
-    case re:run(Date, "^([0-9]{4})(-?)([0-9]{2})(-?)([0-9]{2})([tT])(.*)$", [{capture, all_but_first, list}]) of
-        {match, [Year, Cut1, Month, Cut2, Day, T, TimeString]} when (((T == "t") or (T == "T")) and (Cut1 == Cut2)) ->
-            case re:run(TimeString, "^([0-9]{2})(:?)([0-9]{2})(:?)([0-9]{2})(.*)$", [{capture, all_but_first, list}]) of
+    case re:run(Date, ?DATE_RE, [{capture, all_but_first, list}]) of
+        {match, [Year, Cut1, Month, Cut2, Day, T, TimeString]}
+        when (((T == "t") or (T == "T")) and (Cut1 == Cut2)) ->
+            case re:run(TimeString, ?TIME_RE, [{capture, all_but_first, list}]) of
                 {match, [Hour, Cut3, Minute, Cut4, Second, TimeZoneString]} when (Cut3 == Cut4) ->
-                    validate_datetime({s2i(Year), s2i(Month), s2i(Day)}, {s2i(Hour), s2i(Minute), s2i(Second)}, TimeZoneString);
+                    validate_datetime({s2i(Year), s2i(Month), s2i(Day)},
+                                      {s2i(Hour), s2i(Minute), s2i(Second)},
+                                      TimeZoneString);
                 _ ->
                     false
             end;
@@ -194,8 +206,10 @@ validate_datetime({Year, Month, Day} = DateTuple, {Hour, Minute, Second} = TimeT
             false
     end.
 
+-define(TIMEZONE_RE, "^([Z+-])([0-9]{2})?(:?)([0-9]{2})?$").
+
 check_time_zone(DateTuple, TimeTuple, TimeZoneString) ->
-    case re:run(TimeZoneString, "^([Z+-])([0-9]{2})?(:?)([0-9]{2})?$", [{capture, all_but_first, list}]) of
+    case re:run(TimeZoneString, ?TIMEZONE_RE, [{capture, all_but_first, list}]) of
         {match, ["Z", "", ""]} ->
             {true, {DateTuple, TimeTuple}};
         {match, [T, Time | Other]} when ((T == "+") or (T == "-")) ->
