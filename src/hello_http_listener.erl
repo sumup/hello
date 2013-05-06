@@ -31,6 +31,7 @@
 -export([init/3, handle/2, terminate/3]).
 
 -include("internal.hrl").
+-include("transport.hrl").
 -include_lib("ex_uri/include/ex_uri.hrl").
 
 %% --------------------------------------------------------------------------------
@@ -91,9 +92,9 @@ process(Binding, Req, State) ->
 
 http_chunked_loop(Handler, Request, State) ->
     receive
-        {hello_closed, Handler, _Peer} ->
+        #hello_closed{handler = Handler} ->
             {ok, Request, State};
-        {hello_msg, Handler, _, Message} ->
+        #hello_msg{handler = Handler, message = Message} ->
             cowboy_req:chunk(Message, Request),
             http_chunked_loop(Handler, Request, State)
     end.

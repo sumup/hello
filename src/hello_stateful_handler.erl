@@ -45,6 +45,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include("internal.hrl").
+-include("transport.hrl").
 -include("hello.hrl").
 
 -record(context, {
@@ -380,10 +381,10 @@ send_notification(Context = #context{protocol = Protocol}, Method, Params) ->
     send_binary(Context, hello_proto:encode(Request)).
 
 send_binary(#context{transport = TPid, peer = Peer}, Message) when is_binary(Message) ->
-    TPid ! {hello_msg, self(), Peer, Message}.
+    TPid ! #hello_msg{handler = self(), peer = Peer, message = Message}.
 
 send_closed(#context{transport = TPid, peer = Peer}) ->
-    TPid ! {hello_closed, self(), Peer}.
+    TPid ! #hello_closed{handler = self(), peer = Peer}.
 
 -spec make_from_context(reference(), #request{}, #state{}) -> #from_context{}.
 make_from_context(_ReqRef, #request{reqid = undefined}, State) ->

@@ -104,6 +104,7 @@
 
 -include("hello.hrl").
 -include("internal.hrl").
+-include("transport.hrl").
 
 -define(MESSAGE_TIMEOUT, 10000). % 10sec
 
@@ -141,18 +142,18 @@ handler(#binding{protocol = Protocol, log_url = Endpoint, callback_mod = Callbac
                 {ok, Request, Response} ->
                     hello_request_log:request(CallbackModule, self(), Endpoint, Request, Response),
                     BinResp = hello_proto:encode(Response),
-                    Transport ! {hello_msg, self(), Peer, BinResp};
+                    Transport ! #hello_msg{handler = self(), peer = Peer, message = BinResp};
                 {proto_reply, Response} ->
                     hello_request_log:bad_request(CallbackModule, self(), Endpoint, Message, Response),
                     BinResp = hello_proto:encode(Response),
-                    Transport ! {hello_msg, self(), Peer, BinResp};
+                    Transport ! #hello_msg{handler = self(), peer = Peer, message = BinResp};
                 ignore ->
                     ignore
             end,
-            Transport ! {hello_closed, self(), Peer}
+            Transport ! #hello_closed{handler = self(), peer = Peer}
     after
         ?MESSAGE_TIMEOUT ->
-            Transport ! {hello_closed, self(), Peer}
+            Transport ! #hello_closed{handler = self(), peer = Peer}
     end.
 
 %% @private

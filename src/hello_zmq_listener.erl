@@ -30,6 +30,7 @@
 
 -include_lib("ex_uri/include/ex_uri.hrl").
 -include("internal.hrl").
+-include("transport.hrl").
 -define(SHUTDOWN_TIMEOUT, 500).
 
 start_link(Binding) ->
@@ -94,13 +95,13 @@ handle_info({zmq, Socket, Message, []}, State = #state{binding = Binding, socket
     end,
     {noreply, State#state{lastmsg_peer = undefined}};
 
-handle_info({hello_msg, _Handler, Peer, Message}, State = #state{socket = Socket}) ->
+handle_info(#hello_msg{peer = Peer, message = Message}, State = #state{socket = Socket}) ->
     ok = erlzmq:send(Socket, Peer, [sndmore]),
     ok = erlzmq:send(Socket, <<>>, [sndmore]),
     ok = erlzmq:send(Socket, Message),
     {noreply, State};
 
-handle_info({hello_closed, _HandlerPid, _Peer}, State) ->
+handle_info(#hello_closed{}, State) ->
     {noreply, State};
 
 handle_info({'EXIT', _HandlerPid, _Reason}, State) ->
