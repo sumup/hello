@@ -1,8 +1,8 @@
 -module(hello_SUITE).
 -compile(export_all).
 
--include("ct.hrl").
 -include("../include/hello.hrl").
+-include_lib("common_test/include/ct.hrl").
 
 % ---------------------------------------------------------------------
 % -- test cases

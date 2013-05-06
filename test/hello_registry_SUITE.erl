@@ -1,7 +1,8 @@
 -module(hello_registry_SUITE).
 -compile(export_all).
 
--include("ct.hrl").
+-include("hello_ct_helpers.hrl").
+-include_lib("common_test/include/ct.hrl").
 -include_lib("proper/include/proper.hrl").
 -define(Mod, hello_registry).
 
@@ -13,8 +14,7 @@ all() ->
 % ---------------------------------------------------------------------
 % -- test cases
 proper_statemachine(_Config) ->
-    Output = fun (Format, Data) -> io:format(user, Format, Data) end,
-    true   = proper:quickcheck(prop_registry_works(), [{numtests, 1000}, {on_output, Output}]).
+    ?proper_qc(prop_registry_works(), [{numtests, 1000}]).
 
 % ---------------------------------------------------------------------
 % -- proper STM

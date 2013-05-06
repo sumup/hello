@@ -1,24 +1,9 @@
 -module(hello_client_SUITE).
 -compile(export_all).
 
--include("ct.hrl").
+-include("hello_ct_helpers.hrl").
+-include_lib("common_test/include/ct.hrl").
 -define(UNKNOWN_HOST, "http://undefined.undefined:8888").
-
--define(equal(Expected, Actual),
-    (fun (Expected@@@, Expected@@@) -> true;
-         (Expected@@@, Actual@@@) ->
-             ct:fail("MISMATCH(~s:~b, ~s)~nExpected: ~p~nActual:   ~p~n",
-		     [?FILE, ?LINE, ??Actual, Expected@@@, Actual@@@])
-     end)(Expected, Actual)).
-
--define(match(Guard, Expr),
-        ((fun () ->
-                  case (Expr) of
-                      Guard -> ok;
-                      V -> ct:fail("MISMATCH(~s:~b, ~s)~nExpected: ~p~nActual:   ~p~n",
-                                   [?FILE, ?LINE, ??Expr, ??Guard, V])
-                  end
-          end)())).
 
 % ---------------------------------------------------------------------
 % -- test cases

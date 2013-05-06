@@ -4,8 +4,8 @@
 -export([method_info/0, param_info/1, handle_request/3]).
 -compile(export_all).
 
--include("ct.hrl").
 -include("../include/hello.hrl").
+-include_lib("common_test/include/ct.hrl").
 
 -define(REQ_ID, 1).
 
