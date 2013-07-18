@@ -18,10 +18,3 @@
     default            :: term(),
     description = ""   :: string()
 }).
-
--record(rpc_bulk, {
-    reuse              :: atom(),
-    except             :: [atom()],
-    name               :: atom(),
-    description = ""   :: string()
-}).
