@@ -86,18 +86,29 @@ get_param_info({CallbackModule, ModuleStat}, Name) ->
 strip_keys(Proplist) ->
     lists:map(fun ({_K, V}) -> V end, Proplist).
 
-request_params_gen(#rpc_method{params_as = WantParamEncoding}, Info, #request{params = ParamsIn}) ->
+request_params_gen(#rpc_method{params_as = WantParamEncoding}, PInfo,
+                   #request{params = ParamsIn}) ->
     try
-        Params = params_to_proplist(Info, ParamsIn),
-        Validated = validate_params(Info, Params),
-
-        case WantParamEncoding of
-            proplist -> {ok, Validated};
-            list     -> {ok, strip_keys(Validated)};
-            object   -> {ok, {Validated}}
-        end
+        request_params_gen_1(PInfo, ParamsIn, WantParamEncoding)
     catch
         throw:{invalid, Msg} -> {error, Msg}
+    end.
+
+request_params_gen_1(PInfo, ParamsIn, WantParamEncoding)
+                                            when is_function(PInfo) ->
+    case PInfo(WantParamEncoding, ParamsIn) of
+        {ok, _}=Res -> Res;
+        {error, Message} -> throw({invalid, Message})
+    end;
+
+request_params_gen_1(PInfo, ParamsIn, WantParamEncoding) when is_list(PInfo) ->
+    Params = params_to_proplist(PInfo, ParamsIn),
+    Validated = validate_params(PInfo, Params),
+
+    case WantParamEncoding of
+        proplist -> {ok, Validated};
+        list     -> {ok, strip_keys(Validated)};
+        object   -> {ok, {Validated}}
     end.
 
 validate_params(PInfo, Params) ->
