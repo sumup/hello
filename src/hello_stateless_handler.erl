@@ -36,7 +36,7 @@
 %   ```
 %      -record(rpc_method, {
 %          name              :: atom(),
-%          params_as = list  :: 'list' | 'proplist',
+%          params_as = list  :: 'list' | 'proplist' | 'object',
 %          description = ""  :: string()
 %      }).
 %   '''

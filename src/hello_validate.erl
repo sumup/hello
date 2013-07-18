@@ -111,7 +111,8 @@ request_params_gen(#rpc_method{params_as = WantParamEncoding}, Info, Mod, #reque
         end,
         case WantParamEncoding of
             proplist -> {ok, Validated};
-            list     -> {ok, strip_keys(Validated)}
+            list     -> {ok, strip_keys(Validated)};
+            object   -> {ok, {Validated}}
         end
     catch
         throw:{invalid, Msg} -> {error, Msg}
