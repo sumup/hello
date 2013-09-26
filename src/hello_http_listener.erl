@@ -59,20 +59,30 @@ init({tcp, http}, Req, _) ->
 
 handle(Req, State) ->
     {Method, Req1} = cowboy_req:method(Req),
+    {Port, Req3} = cowboy_req:port(Req1),
+    {Path, Req4} = cowboy_req:path(Req3),
+    {Host, Req5} = cowboy_req:host(Req4),
     case lists:member(Method, [<<"PUT">>, <<"POST">>]) of
         true ->
-            {Port, Req3} = cowboy_req:port(Req1),
-            {Path, Req4} = cowboy_req:path(Req3),
-            {Host, Req5} = cowboy_req:host(Req4),
             PathList     = unslash(Path),
             case lookup_binding(?MODULE, Host, Port, PathList) of
                 {ok, Binding} ->
                     process(Binding, Req, State);
                 {error, not_found} ->
+                    hello_request_log:bad_request(hello_http_listener,
+                                                  "404 Not Found",
+                                                  {Host, Port, Path},
+                                                  Req,
+                                                  "404"),
                     {ok, Req6} = cowboy_req:reply(404, server_header(), Req5),
                     {ok, Req6, undefined}
             end;
         false ->
+            hello_request_log:bad_request(hello_http_listener,
+                                          "405 Method Not Allowed",
+                                          {Host, Port, Path},
+                                          Req,
+                                          "405"),
             {ok, Req2} = cowboy_req:reply(405, server_header(), Req1),
             {ok, Req2, undefined}
     end.
