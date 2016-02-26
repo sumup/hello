@@ -99,7 +99,7 @@ error_resp_to_error_reply(#error{code = Code, message = Msg}) ->
 %% -- Encoding
 -spec encode(hello_proto:request() | hello_proto:response()) -> binary().
 encode(Thing) ->
-    hello_json:encode(encode_json(Thing)).
+    jiffy:encode(encode_json(Thing)).
 
 encode_json(R = #response{reqid = ID, proto_data = #jsonrpc{version = 1}}) ->
     {[{<<"error">>, null}, {<<"result">>, R#response.result}, {<<"id">>, ID}]};
