@@ -87,6 +87,8 @@ handle(Req, State) ->
             PathList     = unslash(Path),
             case lookup_binding(?MODULE, Host, Port, PathList) of
                 {ok, Binding} ->
+                    hello_request_log:request(hello_http_listener, self(),
+                                              {Host, Port, Path}, Req, undefined),
                     process(Binding, Req, State);
                 {error, not_found} ->
                     hello_request_log:bad_request(hello_http_listener,
