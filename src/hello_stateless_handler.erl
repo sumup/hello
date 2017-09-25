@@ -157,16 +157,16 @@ transport_param(Key, #stateless_context{transport_params = Params}, Default) ->
 handler(#binding{protocol = Protocol, log_url = Endpoint, callback_mod = CallbackModule}, Peer, Transport, TransportParams) ->
     receive
         {?INCOMING_MSG_MSG, Message} ->
-            case run_binary_request(Protocol, CallbackModule, TransportParams, Message) of
-                {ok, Request, Response} ->
-                    hello_request_log:request(CallbackModule, self(), Endpoint, Request, Response),
+            case run_binary_request(Protocol, CallbackModule, TransportParams, Message, Endpoint) of
+                {ok, _Request, Response} ->
+                    hello_request_log:response(CallbackModule, self(), Endpoint, Response),
                     TMsg = #hello_msg{handler = self(),
                                       peer = Peer,
                                       message = hello_proto:encode(Response),
                                       closed = true},
                     Transport ! TMsg;
                 {proto_reply, Response} ->
-                    hello_request_log:bad_request(CallbackModule, self(), Endpoint, Message, Response),
+                    hello_request_log:bad_request_response(CallbackModule, self(), Endpoint, Response),
                     TMsg = #hello_msg{handler = self(),
                                       peer = Peer,
                                       message = hello_proto:encode(Response),
@@ -190,6 +190,27 @@ run_binary_request(Protocol, CallbackModule, TransportParams, BinRequest) ->
         Req = #request{} ->
             {ok, Req, do_single_request(CallbackModule, Context, Req)};
         Req = #batch_request{requests = GoodReqs} ->
+            Resps = [do_single_request(CallbackModule, Context, R) || R <- GoodReqs],
+            {ok, Req, hello_proto:batch_response(Req, Resps)};
+        ProtoReply = {proto_reply, _Resp} ->
+            ProtoReply;
+        #response{} ->
+            ignore;
+        #batch_response{} ->
+            ignore
+    end.
+
+-spec run_binary_request(module(), module(), hello:transport_params(), binary(), any()) ->
+                                {ok, hello_proto:request(), hello_proto:response()} |
+                                {error, hello_proto:response()}.
+run_binary_request(Protocol, CallbackModule, TransportParams, BinRequest, Endpoint) ->
+    Context = #stateless_context{transport_params = TransportParams},
+    case hello_proto:decode(Protocol, BinRequest) of
+        Req = #request{} ->
+            hello_request_log:request(CallbackModule, self(), Endpoint, Req),
+            {ok, Req, do_single_request(CallbackModule, Context, Req)};
+        Req = #batch_request{requests = GoodReqs} ->
+            hello_request_log:request(CallbackModule, self(), Endpoint, Req),
             Resps = [do_single_request(CallbackModule, Context, R) || R <- GoodReqs],
             {ok, Req, hello_proto:batch_response(Req, Resps)};
         ProtoReply = {proto_reply, _Resp} ->

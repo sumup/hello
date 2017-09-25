@@ -23,6 +23,8 @@
 
 -export([open/2, close/1, open_bad_requests/1, close_bad_requests/0, request/5,
          bad_request/5]).
+% custom
+-export([request/4, response/4, bad_request_response/4]).
 
 -include("internal.hrl").
 
@@ -70,10 +72,21 @@ close_bad_requests() ->
 request(CallbackModule, Handler, Endpoint, Request, Response) ->
     ?MOD:request(CallbackModule, Handler, Endpoint, Request, Response).
 
+-spec request(module(), atom(), endpoint(), hello_proto:request()) -> resp().
+request(CallbackModule, Handler, Endpoint, Request) ->
+    ?MOD:request(CallbackModule, Handler, Endpoint, Request).
+
+-spec response(module(), atom(), endpoint(), hello_proto:response()) -> resp().
+response(CallbackModule, Handler, Endpoint, Response) ->
+    ?MOD:response(CallbackModule, Handler, Endpoint, Response).
+
 -spec bad_request(module(), atom(), endpoint(), binary(),
                   hello_proto:response()) -> resp().
 bad_request(CallbackModule, Handler, Endpoint, Message, Response) ->
     ?MOD:bad_request(CallbackModule, Handler, Endpoint, Message, Response).
+
+bad_request_response(CallbackModule, Handler, Endpoint, Response) ->
+    ?MOD:bad_request_response(CallbackModule, Handler, Endpoint, Response).
 
 %% --------------------------------------------------------------------------------
 %% -- Helpers
