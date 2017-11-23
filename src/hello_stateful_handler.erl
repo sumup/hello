@@ -141,7 +141,7 @@ start_link(Binding, Peer, Transport, TransportParams) ->
     context                 :: #context{},
     mod                     :: module(),
     mod_state               :: term(),
-    async_reply_map         :: gb_tree(),
+    async_reply_map         :: gb_tree:gb_tree(),
     log_url                 :: binary(),
     idle_timer              :: term(), %% the current timer
     idle_timeout_ref        :: reference(),

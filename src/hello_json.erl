@@ -82,7 +82,6 @@
 -export([encode/1, decode/1]).
 -export([object_to_record/5, record_to_object/4]).
 -export_type([value/0, json_string/0, json_number/0, json_boolean/0, json_array/0, json_object/0, json_null/0]).
--compile(bin_opt_info).
 
 -type value() :: json_string() | json_number() | json_boolean() | json_array() | json_object() | json_null().
 -type json_string()  :: binary().

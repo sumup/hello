@@ -28,7 +28,7 @@
 -record(zmq_state, {
     context :: erlzmq:erlzmq_context(),
     socket  :: erlzmq:erlzmq_socket(),
-    pending :: gb_tree()
+    pending :: gb_tree:gb_tree()
 }).
 
 -record(zmq_options, {
@@ -40,7 +40,7 @@ validate_options([_|R]) ->
 validate_options([]) ->
     {ok, #zmq_options{}}.
 
-init(URLRec, Options) ->
+init(URLRec, _Options) ->
     URL = ex_uri:encode(URLRec),
     {ok, Context} = erlzmq:context(),
     {ok, Socket} = erlzmq:socket(Context, [dealer, {active, true}]),
