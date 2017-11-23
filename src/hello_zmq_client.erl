@@ -28,7 +28,7 @@
 -record(zmq_state, {
     context :: erlzmq:erlzmq_context(),
     socket  :: erlzmq:erlzmq_socket(),
-    pending :: gb_tree()
+    pending :: gb_tree:gb_tree()
 }).
 
 -record(zmq_options, {
