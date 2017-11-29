@@ -46,6 +46,7 @@ start() ->
 
 start(_Type, _StartArgs) ->
     {ok, Supervisor} = hello_supervisor:start_link(),
+    statman_server:add_subscriber(statman_aggregator),
     ok = hello_request_log:open_bad_requests(Supervisor),
     {ok, Supervisor, undefined}.
 

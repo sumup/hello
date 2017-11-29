@@ -158,15 +158,15 @@ handler(#binding{protocol = Protocol, log_url = Endpoint, callback_mod = Callbac
     receive
         {?INCOMING_MSG_MSG, Message} ->
             case run_binary_request(Protocol, CallbackModule, TransportParams, Message, Endpoint) of
-                {ok, _Request, Response} ->
-                    hello_request_log:response(CallbackModule, self(), Endpoint, Response),
+                {ok, Request, Response} ->
+                    hello_request_log:request(CallbackModule, self(), Endpoint, Request, Response),
                     TMsg = #hello_msg{handler = self(),
                                       peer = Peer,
                                       message = hello_proto:encode(Response),
                                       closed = true},
                     Transport ! TMsg;
                 {proto_reply, Response} ->
-                    hello_request_log:bad_request_response(CallbackModule, self(), Endpoint, Response),
+                    hello_request_log:bad_request(CallbackModule, self(), Endpoint, Message, Response),
                     TMsg = #hello_msg{handler = self(),
                                       peer = Peer,
                                       message = hello_proto:encode(Response),
@@ -181,37 +181,19 @@ handler(#binding{protocol = Protocol, log_url = Endpoint, callback_mod = Callbac
             Transport ! #hello_closed{handler = self(), peer = Peer}
     end.
 
-%% @private
--spec run_binary_request(module(), module(), hello:transport_params(), binary()) ->
-        {ok, hello_proto:request(), hello_proto:response()} | {error, hello_proto:response()}.
 run_binary_request(Protocol, CallbackModule, TransportParams, BinRequest) ->
-    Context = #stateless_context{transport_params = TransportParams},
-    case hello_proto:decode(Protocol, BinRequest) of
-        Req = #request{} ->
-            {ok, Req, do_single_request(CallbackModule, Context, Req)};
-        Req = #batch_request{requests = GoodReqs} ->
-            Resps = [do_single_request(CallbackModule, Context, R) || R <- GoodReqs],
-            {ok, Req, hello_proto:batch_response(Req, Resps)};
-        ProtoReply = {proto_reply, _Resp} ->
-            ProtoReply;
-        #response{} ->
-            ignore;
-        #batch_response{} ->
-            ignore
-    end.
+    run_binary_request(Protocol, CallbackModule, TransportParams, BinRequest, <<>>).
 
--spec run_binary_request(module(), module(), hello:transport_params(), binary(), any()) ->
-                                {ok, hello_proto:request(), hello_proto:response()} |
-                                {error, hello_proto:response()}.
+%% @private
+-spec run_binary_request(module(), module(), hello:transport_params(), binary(), binary()) ->
+        {ok, hello_proto:request(), hello_proto:response()} | {error, hello_proto:response()}.
 run_binary_request(Protocol, CallbackModule, TransportParams, BinRequest, Endpoint) ->
     Context = #stateless_context{transport_params = TransportParams},
     case hello_proto:decode(Protocol, BinRequest) of
         Req = #request{} ->
-            hello_request_log:request(CallbackModule, self(), Endpoint, Req),
-            {ok, Req, do_single_request(CallbackModule, Context, Req)};
+            {ok, Req, do_single_request(CallbackModule, Context, Req, Endpoint)};
         Req = #batch_request{requests = GoodReqs} ->
-            hello_request_log:request(CallbackModule, self(), Endpoint, Req),
-            Resps = [do_single_request(CallbackModule, Context, R) || R <- GoodReqs],
+            Resps = [do_single_request(CallbackModule, Context, R, Endpoint) || R <- GoodReqs],
             {ok, Req, hello_proto:batch_response(Req, Resps)};
         ProtoReply = {proto_reply, _Resp} ->
             ProtoReply;
@@ -221,14 +203,18 @@ run_binary_request(Protocol, CallbackModule, TransportParams, BinRequest, Endpoi
             ignore
     end.
 
-do_single_request(Mod, Context, Req = #request{method = MethodName}) ->
+do_single_request(Mod, Context, Req = #request{method = MethodName}, Endpoint) ->
     try
         case hello_validate:find_method(Mod:method_info(), MethodName) of
             undefined ->
                 hello_proto:error_response(Req, method_not_found);
             Method ->
                 case hello_validate:request_params(Method, Mod, Req) of
-                    {ok, Validated} -> run_callback_module(Req, Mod, Context, Method, Validated);
+                    {ok, Validated} ->
+                        Start = os:timestamp(),
+                        Res = run_callback_module(Req, Mod, Context, Method, Validated),
+                        statman_histogram:record_value({Endpoint, total}, Start),
+                        Res;
                     {error, Msg}    -> hello_proto:error_response(Req, invalid_params, Msg)
                 end
         end

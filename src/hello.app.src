@@ -1,7 +1,7 @@
 % vim: filetype=erlang
 {application, hello,
   [{description, "JSON-RPC API toolkit"},
-   {applications, [kernel, stdlib, cowboy, ex_uri, ibrowse]},
+   {applications, [kernel, stdlib, cowboy, ex_uri, ibrowse, newrelic, statman]},
    {registered, [hello_supervisor, hello_stateless_zmq_supervisor]},
    {vsn, git},
    {mod, {hello, []}},

@@ -59,6 +59,8 @@ role_children(client) ->
      {client_conf,  {hello_client_conf, start_link, []}, transient, 300, worker, [hello_client_conf]}];
 role_children(server) ->
     [{registry,     {hello_registry, start_link, []}, transient, 1000, worker, [hello_registry]},
+     {statman_aggregator, {statman_aggregator, start_link, []}, permanent, 5000, worker, [statman_aggregator]},
+     {newrelic_poller, {newrelic_poller, start_link, [fun newrelic_statman:poll/0]}, permanent, 5000, worker, [newrelic_poller]},
      {listener_sup, {hello_listener_supervisor, start_link, []}, transient, infinity, supervisor, [hello_listener_supervisor]},
      {binding_sup,  {hello_binding_supervisor, start_link, []}, transient, infinity, supervisor, [hello_binding_supervisor]}];
 role_children(_) ->
