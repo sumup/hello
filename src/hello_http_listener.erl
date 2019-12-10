@@ -36,12 +36,16 @@
 
 %% --------------------------------------------------------------------------------
 %% -- hello_binding callbacks
-listener_childspec(ChildID, #binding{ip = IP, port = Port}) ->
-    Acceptors = 30,
-    TransOpts = [{port, default_port(Port)}, {ip, IP}],
+listener_childspec(ChildID, #binding{ip = IP0, port = Port0}) ->
+    TransportOptions0 = application:get_env(hello, transport_options, []),
+    IP = proplists:get_value(ip, TransportOptions0, IP0),
+    Port = proplists:get_value(port, TransportOptions0, default_port(Port0)),
+    Acceptors = proplists:get_value(num_acceptors, TransportOptions0, 30),
+    TransportOptions = [{port, Port}, {ip, IP} | TransportOptions0],
+
     Dispatch = cowboy_router:compile([{'_', [{'_', ?MODULE, []}]}]),
-    ProtoOpts = [{env, [{dispatch, Dispatch}]}],
-    ranch:child_spec(ChildID, Acceptors, ranch_tcp, TransOpts, cowboy_protocol, ProtoOpts).
+    ProtocolOptions = [{env, [{dispatch, Dispatch}]}] ++ application:get_env(hello, protocol_options, []),
+    ranch:child_spec(ChildID, Acceptors, ranch_tcp, TransportOptions, cowboy_protocol, ProtocolOptions).
 
 listener_key(#binding{ip = IP, port = Port}) ->
     hello_registry:listener_key(IP, default_port(Port)).
